@@ -161,9 +161,29 @@ export async function distributeCircleKey ({ circleKey, members, identity, deliv
  *   createdAt
  * }
  */
-const mem = new Map()
+// Persistencia LOCAL (offline-first): los círculos sobreviven al recargar. La clave
+// 'here:circles' guarda { circleId: circle }. CONVENCIONES §4: el durable/cross-device
+// va al store (store.closer.click) — TODO(store) abajo; localStorage es el cache local.
+const LS_KEY = 'here:circles'
 
-export function listCircles () { return [...mem.values()] }
-export function getCircle (id) { return mem.get(id) || null }
-export function saveCircle (circle) { mem.set(circle.id, circle); return circle }
-export function deleteCircle (id) { mem.delete(id) }
+function loadAll () {
+  try { const o = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); return (o && typeof o === 'object') ? o : {} }
+  catch (_) { return {} }
+}
+function saveAll (obj) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(obj)) } catch (_) {}
+}
+
+export function listCircles () { return Object.values(loadAll()) }
+export function getCircle (id) { return loadAll()[id] || null }
+export function saveCircle (circle) {
+  if (!circle || !circle.id) return circle
+  const all = loadAll(); all[circle.id] = circle; saveAll(all)
+  return circle
+}
+export function deleteCircle (id) { const all = loadAll(); delete all[id]; saveAll(all) }
+
+// TODO(store): además del cache local, sincronizar al store del ecosistema
+// (@closerclick/closer-click-store, store.closer.click) para que los círculos viajen
+// entre dispositivos del dueño. La clave del círculo NO se guarda en claro: se guarda
+// cifrada al propio vault (identity.encrypt a mí mismo) antes de subirla.
