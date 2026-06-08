@@ -1,0 +1,23 @@
+{
+  "name": "here",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@closerclick/closer-click-identity": "^0.10.0",
+    "@closerclick/closer-click-nav": "0.2.0",
+    "@closerclick/closer-click-profile": "0.3.1",
+    "@closerclick/closer-click-support": "0.3.9",
+    "qrcode": "1.5.4",
+    "vue": "3.5.25"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.2",
+    "vite": "7.3.1"
+  }
+}
