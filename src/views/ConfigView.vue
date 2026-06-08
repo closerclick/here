@@ -151,5 +151,35 @@ async function copyPayload () {
       <!-- TODO(bridge): aquí NO se llama al servidor. OwnTracks, ya configurado,
            publica solo contra https://geo.closer.click/here en background. -->
     </div>
+
+    <!-- Guía: cómo configurar OwnTracks (siempre visible) -->
+    <div class="card" data-testid="owntracks-guide">
+      <h2>{{ t.setupTitle }}</h2>
+      <p class="muted">{{ t.setupIntro }}</p>
+      <div class="stack" style="margin-top:10px">
+        <div class="list-item">
+          <div>
+            <div class="sub">{{ t.setupGet }}</div>
+            <div class="muted">{{ t.setupGetHint }}</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div><div class="sub">{{ t.setupScan }}</div></div>
+        </div>
+      </div>
+
+      <details style="margin-top:12px">
+        <summary class="muted" style="cursor:pointer">{{ t.setupManualLead }}</summary>
+        <div class="stack" style="margin-top:8px">
+          <div class="list-item"><div class="sub">{{ t.setupRowMode }}</div><div class="spacer"></div><span class="mono">{{ t.setupRowModeV }}</span></div>
+          <div class="list-item"><div class="sub">{{ t.setupRowUrl }}</div><div class="spacer"></div><span class="muted">{{ t.setupRowUrlV }}</span></div>
+          <div class="list-item"><div class="sub">{{ t.setupRowUser }}</div><div class="spacer"></div><span class="muted">{{ t.setupRowUserV }}</span></div>
+          <div class="list-item"><div class="sub">{{ t.setupRowPass }}</div><div class="spacer"></div><span class="muted">{{ t.setupRowPassV }}</span></div>
+          <div class="list-item"><div class="sub">{{ t.setupRowKey }}</div><div class="spacer"></div><span class="muted">{{ t.setupRowKeyV }}</span></div>
+        </div>
+      </details>
+
+      <p class="muted" data-testid="setup-closed" style="margin-top:12px">{{ t.setupClosed }}</p>
+    </div>
   </div>
 </template>
