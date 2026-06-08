@@ -7,27 +7,31 @@
 //
 // ESQUELETO: no hay lógica de servidor. El cap firmado y la device key se
 // guardan (TODO store) para que la pantalla "Generar config" arme el .otrc.
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   newDeviceKey, signCapForDevice, revokeDevice, pubkeyId, isIdentityReady
 } from '@/lib/identity'
-import { listCircles, getCircle, saveCircle } from '@/lib/circles'
+import { circlesList, getCircle, saveCircle } from '@/lib/circles'
 
 const props = defineProps({ t: Object })
 
-const circles = ref(listCircles())
+const circles = circlesList   // store reactivo compartido
 const circleId = ref(circles.value[0]?.id || '')
 const label = ref('')
 const tid = ref('')
 const busy = ref(false)
 
-const circle = computed(() => getCircle(circleId.value))
+// Deriva del ref REACTIVO `circles` (no de getCircle, que no es reactivo): así al
+// parear y refrescar, la lista de dispositivos se vuelve a renderizar.
+const circle = computed(() => circles.value.find(c => c.id === circleId.value) || null)
 const devices = computed(() => circle.value?.devices || [])
+// Autoselecciona un círculo cuando aparece uno (creado en otra vista) y no hay selección.
+watch(circles, (list) => { if (!circleId.value && list.length) circleId.value = list[0].id }, { immediate: true })
 
 // TTL del cap por defecto: 30 días (tope duro de la primitiva).
 const TTL_MS = 30 * 24 * 60 * 60 * 1000
 
-function refresh () { circles.value = listCircles() }
+function refresh () { /* store reactivo: no hace falta refrescar manualmente */ }
 
 async function pair () {
   const c = getCircle(circleId.value)

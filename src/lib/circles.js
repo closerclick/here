@@ -14,6 +14,7 @@
 // ella (Encryption key de OwnTracks). El bridge ve únicamente ciphertext opaco.
 // "here" la genera, la reparte cifrada a cada miembro y la mete en la config.
 
+import { reactive, computed } from 'vue'
 import { pubkeyId } from '@closerclick/closer-click-identity/capabilities'
 
 /** slug seguro para usar dentro del circleId (ASCII, sin ':' ni espacios). */
@@ -161,27 +162,34 @@ export async function distributeCircleKey ({ circleKey, members, identity, deliv
  *   createdAt
  * }
  */
-// Persistencia LOCAL (offline-first): los círculos sobreviven al recargar. La clave
-// 'here:circles' guarda { circleId: circle }. CONVENCIONES §4: el durable/cross-device
-// va al store (store.closer.click) — TODO(store) abajo; localStorage es el cache local.
+// STORE REACTIVO COMPARTIDO + persistencia local. UNA sola fuente de verdad reactiva
+// para TODAS las vistas: crear/parear en una vista se refleja en las demás al instante
+// (antes cada vista tenía su propio snapshot ref(listCircles()) y quedaba viejo).
+// 'here:circles' guarda { circleId: circle }. CONVENCIONES §4: el durable/cross-device va
+// al store (store.closer.click) — TODO(store) abajo; localStorage es el cache local.
 const LS_KEY = 'here:circles'
 
 function loadAll () {
   try { const o = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); return (o && typeof o === 'object') ? o : {} }
   catch (_) { return {} }
 }
-function saveAll (obj) {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(obj)) } catch (_) {}
-}
 
-export function listCircles () { return Object.values(loadAll()) }
-export function getCircle (id) { return loadAll()[id] || null }
+// Mapa reactivo { id: circle }. Las vistas leen `circlesList` (computed) → reactivo.
+const _map = reactive(loadAll())
+function persist () { try { localStorage.setItem(LS_KEY, JSON.stringify(_map)) } catch (_) {} }
+
+/** Lista REACTIVA de círculos (usar en las vistas: `circlesList.value`). */
+export const circlesList = computed(() => Object.values(_map))
+
+export function listCircles () { return Object.values(_map) }
+export function getCircle (id) { return _map[id] || null }
 export function saveCircle (circle) {
   if (!circle || !circle.id) return circle
-  const all = loadAll(); all[circle.id] = circle; saveAll(all)
+  _map[circle.id] = circle      // asignación sobre reactive → reactivo en todas las vistas
+  persist()
   return circle
 }
-export function deleteCircle (id) { const all = loadAll(); delete all[id]; saveAll(all) }
+export function deleteCircle (id) { delete _map[id]; persist() }
 
 // TODO(store): además del cache local, sincronizar al store del ecosistema
 // (@closerclick/closer-click-store, store.closer.click) para que los círculos viajen

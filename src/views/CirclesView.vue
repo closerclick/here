@@ -6,12 +6,12 @@ import { ref, computed } from 'vue'
 import { listVaultContacts, getMyPubkey, getIdentity } from '@/lib/identity'
 import {
   slugify, deriveCircleId, generateCircleKey, distributeCircleKey,
-  listCircles, saveCircle, deleteCircle
+  circlesList, saveCircle, deleteCircle
 } from '@/lib/circles'
 
 const props = defineProps({ t: Object })
 
-const circles = ref(listCircles())
+const circles = circlesList   // store reactivo compartido
 const newName = ref('')
 const selectedId = ref(null)
 const contactsOpen = ref(false)
@@ -19,7 +19,7 @@ const contacts = ref([])
 
 const selected = computed(() => circles.value.find(c => c.id === selectedId.value) || null)
 
-function refresh () { circles.value = listCircles() }
+function refresh () { /* store reactivo: no hace falta refrescar manualmente */ }
 
 async function createCircle () {
   const name = newName.value.trim()

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@closerclick/closer-click-identity": "^0.10.0",
@@ -17,6 +18,7 @@
     "vue": "3.5.25"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@vitejs/plugin-vue": "6.0.2",
     "vite": "7.3.1"
   }

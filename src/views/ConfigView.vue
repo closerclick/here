@@ -7,24 +7,48 @@
 // del circleId, el cert firmado por el vault y la clave del círculo, y la pinta.
 import { ref, computed, watch, nextTick } from 'vue'
 import QRCode from 'qrcode'
-import { listCircles, getCircle } from '@/lib/circles'
+import { circlesList } from '@/lib/circles'
 import {
   buildOwnTracksConfig, toOtrcText, toOtrcQrPayload, configSummary
 } from '@/lib/owntracks'
 
 const props = defineProps({ t: Object })
 
-const circles = ref(listCircles())
+const circles = circlesList   // store reactivo compartido
 const circleId = ref(circles.value[0]?.id || '')
+watch(circles, (list) => { if (!circleId.value && list.length) circleId.value = list[0].id }, { immediate: true })
 const deviceId = ref('')
 const canvas = ref(null)
 const config = ref(null)
 const copied = ref(false)
 
-const circle = computed(() => getCircle(circleId.value))
+const circle = computed(() => circles.value.find(c => c.id === circleId.value) || null)
 const devices = computed(() => circle.value?.devices || [])
 const device = computed(() => devices.value.find(d => d.deviceId === deviceId.value) || null)
 const summary = computed(() => config.value ? configSummary(config.value) : null)
+
+// Campos copiables para configurar OwnTracks A MANO. El display enmascara el medio
+// de los valores sensibles (cert/clave), pero el botón copia el valor COMPLETO.
+const copiedField = ref('')
+function maskMiddle (s) { return (!s || s.length <= 18) ? (s || '') : s.slice(0, 8) + '…' + s.slice(-6) }
+const copyFields = computed(() => {
+  const c = config.value
+  if (!c) return []
+  const f = [
+    { key: 'url', label: props.t.serverUrl, value: c.url, display: c.url },
+    { key: 'username', label: props.t.username, value: c.username, display: c.username },
+    { key: 'password', label: props.t.passwordLabel, value: c.password, display: maskMiddle(c.password) }
+  ]
+  if (c.encryptionKey) f.push({ key: 'enckey', label: props.t.encKeyLabel, value: c.encryptionKey, display: maskMiddle(c.encryptionKey) })
+  return f
+})
+async function copyField (key, value) {
+  try {
+    await navigator.clipboard.writeText(value)
+    copiedField.value = key
+    setTimeout(() => { if (copiedField.value === key) copiedField.value = '' }, 1500)
+  } catch (_) {}
+}
 
 // Un dispositivo es "tuyo" (del dueño) cuando NO está atado a un miembro tercero
 // (`forMember`). Solo en TU propia config se incrusta la clave del círculo en
@@ -118,17 +142,16 @@ async function copyPayload () {
       </div>
 
       <div class="stack" style="margin-top:14px">
-        <div class="list-item">
-          <div>
-            <div class="sub">{{ t.serverUrl }}</div>
-            <div class="mono">{{ summary.url }}</div>
+        <!-- Valores para configurar OwnTracks a mano, cada uno con botón de copiar. -->
+        <div class="list-item" v-for="f in copyFields" :key="f.key">
+          <div style="min-width:0;flex:1">
+            <div class="sub">{{ f.label }}</div>
+            <div class="mono" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ f.display }}</div>
           </div>
-        </div>
-        <div class="list-item">
-          <div>
-            <div class="sub">{{ t.username }}</div>
-            <div class="mono">{{ summary.username }}</div>
-          </div>
+          <div class="spacer"></div>
+          <button class="ghost" :data-testid="`copy-${f.key}`" @click="copyField(f.key, f.value)">
+            {{ copiedField === f.key ? t.copied : t.copy }}
+          </button>
         </div>
         <div class="list-item">
           <div class="sub">{{ t.encrypted }}</div>
@@ -168,7 +191,7 @@ async function copyPayload () {
         </div>
       </div>
 
-      <details style="margin-top:12px">
+      <details open style="margin-top:12px">
         <summary class="muted" style="cursor:pointer">{{ t.setupManualLead }}</summary>
         <div class="stack" style="margin-top:8px">
           <div class="list-item"><div class="sub">{{ t.setupRowMode }}</div><div class="spacer"></div><span class="mono">{{ t.setupRowModeV }}</span></div>
