@@ -16,7 +16,7 @@
 
 const GEO_HERE_URL = 'https://geo.closer.click/here'
 
-/** base64url(JSON) sin padding — formato del password (cert) y de los .otrc. */
+/** base64url(JSON) sin padding — formato del PASSWORD (cert) que el bridge parsea. */
 export function base64url (obj) {
   const json = typeof obj === 'string' ? obj : JSON.stringify(obj)
   // UTF-8 seguro
@@ -24,6 +24,16 @@ export function base64url (obj) {
   let bin = ''
   for (const b of bytes) bin += String.fromCharCode(b)
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+/** base64 ESTÁNDAR (con +/=). OwnTracks decodifica el `inline` con Base64.DEFAULT
+ *  (estándar), NO url-safe → el QR/link de import DEBE ir en base64 estándar. */
+export function base64std (obj) {
+  const json = typeof obj === 'string' ? obj : JSON.stringify(obj)
+  const bytes = new TextEncoder().encode(json)
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin)
 }
 
 /**
@@ -79,8 +89,12 @@ export function toOtrcText (config) {
  * lleva credenciales del usuario y no puede salir a un generador externo).
  */
 export function toOtrcQrPayload (config) {
-  const inline = base64url(config)
-  return `owntracks:///config?inline=${inline}`
+  // OwnTracks importa con owntracks:///config?inline=<base64 ESTÁNDAR CRUDO> (lo que
+  // documenta y lo que produce su propio export). Decodifica con Base64.DEFAULT (estándar,
+  // NO url-safe) → por eso NO usamos base64url ni url-encode aquí. Sirve para el QR
+  // (cross-device) y para el deep-link tappable (mismo teléfono). El password (cert) que
+  // va DENTRO del JSON sigue en base64url (lo exige el bridge); son cosas distintas.
+  return `owntracks:///config?inline=${base64std(config)}`
 }
 
 /** Resumen legible (para mostrar bajo el QR sin exponer el cert/clave en claro). */

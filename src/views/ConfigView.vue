@@ -42,6 +42,10 @@ const copyFields = computed(() => {
   if (c.encryptionKey) f.push({ key: 'enckey', label: props.t.encKeyLabel, value: c.encryptionKey, display: maskMiddle(c.encryptionKey) })
   return f
 })
+// Deep-link tappable: en el MISMO teléfono abre OwnTracks e importa la config (incl. la
+// encryption key). owntracks:///config?inline=<base64 estándar url-encoded>.
+const otHref = computed(() => config.value ? toOtrcQrPayload(config.value) : '#')
+
 async function copyField (key, value) {
   try {
     await navigator.clipboard.writeText(value)
@@ -165,8 +169,15 @@ async function copyPayload () {
         </p>
       </div>
 
-      <div class="row wrap" style="margin-top:14px">
-        <button class="primary" data-testid="download-otrc" @click="downloadOtrc">{{ t.downloadOtrc }}</button>
+      <!-- En el MISMO teléfono: abrir OwnTracks directo (no se puede escanear el QR a uno mismo). -->
+      <a class="primary" :href="otHref" data-testid="open-owntracks"
+         style="display:block;text-align:center;text-decoration:none;margin-top:14px">
+        {{ t.openOwnTracks }}
+      </a>
+      <p class="muted" style="margin:6px 0 0">{{ t.openOwnTracksHint }}</p>
+
+      <div class="row wrap" style="margin-top:12px">
+        <button class="ghost" data-testid="download-otrc" @click="downloadOtrc">{{ t.downloadOtrc }}</button>
         <button class="ghost" data-testid="copy-payload" @click="copyPayload">
           {{ copied ? t.copied : t.copyPayload }}
         </button>

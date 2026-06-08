@@ -14,7 +14,7 @@
 // ella (Encryption key de OwnTracks). El bridge ve únicamente ciphertext opaco.
 // "here" la genera, la reparte cifrada a cada miembro y la mete en la config.
 
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref } from 'vue'
 import { pubkeyId } from '@closerclick/closer-click-identity/capabilities'
 
 /** slug seguro para usar dentro del circleId (ASCII, sin ':' ni espacios). */
@@ -176,20 +176,25 @@ function loadAll () {
 
 // Mapa reactivo { id: circle }. Las vistas leen `circlesList` (computed) → reactivo.
 const _map = reactive(loadAll())
+// Contador de versión: Object.values(_map) NO rastrea cambios PROFUNDOS (p.ej. mutar
+// circle.devices de un círculo existente). Bumpeamos en cada cambio para forzar el
+// re-cómputo de circlesList en TODAS las vistas (no solo en la que hizo el cambio).
+const _ver = ref(0)
+function bump () { _ver.value++ }
 function persist () { try { localStorage.setItem(LS_KEY, JSON.stringify(_map)) } catch (_) {} }
 
 /** Lista REACTIVA de círculos (usar en las vistas: `circlesList.value`). */
-export const circlesList = computed(() => Object.values(_map))
+export const circlesList = computed(() => { _ver.value; return Object.values(_map) })
 
 export function listCircles () { return Object.values(_map) }
 export function getCircle (id) { return _map[id] || null }
 export function saveCircle (circle) {
   if (!circle || !circle.id) return circle
-  _map[circle.id] = circle      // asignación sobre reactive → reactivo en todas las vistas
-  persist()
+  _map[circle.id] = circle      // asignación sobre reactive
+  bump(); persist()             // bump → propaga a todas las vistas
   return circle
 }
-export function deleteCircle (id) { delete _map[id]; persist() }
+export function deleteCircle (id) { delete _map[id]; bump(); persist() }
 
 // TODO(store): además del cache local, sincronizar al store del ecosistema
 // (@closerclick/closer-click-store, store.closer.click) para que los círculos viajen
