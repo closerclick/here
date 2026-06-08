@@ -106,6 +106,7 @@ function fmtDate (ms) {
         </select>
         <input v-model="label" :placeholder="t.deviceLabelPlaceholder" data-testid="device-label" />
         <input v-model="tid" :placeholder="t.tidPlaceholder" maxlength="2" data-testid="device-tid" />
+        <p class="muted" data-testid="tid-hint" style="margin:-2px 0 0">{{ t.tidHint }}</p>
         <button class="primary" :disabled="!circleId || busy"
                 data-testid="pair-device" @click="pair">
           {{ t.pair }}
